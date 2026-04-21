@@ -2,84 +2,63 @@ const App = {
     allArtworks: [],
 
     async init() {
-        console.log("앱 초기화 중...");
         await this.fetchData();
+        this.createFilterMenus(); // 필터 메뉴 자동 생성
         this.handleRouting();
-        this.bindEvents();
+        window.addEventListener('hashchange', () => this.handleRouting());
     },
 
-async fetchData() {
-        // '웹에 게시' 시 생성된 고유 키를 사용하여 CSV 경로를 만듭니다.
-        // 주소에서 2PACX-... 부분을 추출하여 사용합니다.
+    async fetchData() {
         const pubKey = "2PACX-1vRSEzwAv82QQ3t90wx7jaaI4_ujdxXLR5AyUkvuQonCJ_Yn21I6V614Ao9PYDRai9Pt3OYXm9Pn-2J5";
         const url = `https://docs.google.com/spreadsheets/d/e/${pubKey}/pub?output=csv`;
         
         try {
-            console.log("데이터 요청 중...");
             const response = await fetch(url);
-            if (!response.ok) throw new Error("네트워크 응답 에러");
-            
             const csvText = await response.text();
-            
-            // 데이터가 비어있거나 오류 페이지인지 확인
-            if (csvText.length < 100) {
-                throw new Error("데이터가 너무 적거나 형식이 올바르지 않습니다.");
-            }
-
             this.allArtworks = this.parseCSV(csvText);
-            console.log("로드된 작품 수:", this.allArtworks.length);
-            
-            // 데이터 로드 후 현재 페이지 렌더링
-            this.handleRouting(); 
-            
-        } catch (error) {
-            console.error("데이터 로드 실패:", error);
-            const container = document.getElementById('page-archive');
-            if (container) {
-                container.innerHTML = `<p style="padding:50px; text-align:center;">데이터를 불러오는 데 실패했습니다: ${error.message}</p>`;
-            }
-        }
+        } catch (e) { console.error("Data Load Error", e); }
     },
-    parseCSV(csv) {
-        // CSV 줄바꿈 및 쉼표 처리
-        const lines = csv.split(/\r?\n/);
-        if (lines.length < 3) return [];
 
+    parseCSV(csv) {
+        const lines = csv.split(/\r?\n/);
         const data = [];
-        // 3행(인덱스 2)부터 실제 데이터 시작
         for (let i = 2; i < lines.length; i++) {
             const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             if (!row || row.length < 3) continue;
-
-            const cleanRow = row.map(cell => cell.replace(/^"|"$/g, '').trim());
-            
-            const artwork = {
-                id: cleanRow[0],
-                rawUrl: cleanRow[1],
-                title: cleanRow[2],
-                size: cleanRow[3],
-                material: cleanRow[4],
-                year: cleanRow[5],
-                genre: cleanRow[6],
-                series: cleanRow[7] || '기타'
+            const clean = row.map(c => c.replace(/^"|"$/g, '').trim());
+            const art = {
+                id: clean[0], title: clean[2], size: clean[3],
+                material: clean[4], year: clean[5], genre: clean[6],
+                series: clean[7] || '기타',
+                image: this.convertDriveLink(clean[1])
             };
-
-            artwork.image = this.convertDriveLink(artwork.rawUrl);
-            if (artwork.title && artwork.image) data.push(artwork);
+            if (art.title && art.image) data.push(art);
         }
         return data;
     },
 
     convertDriveLink(url) {
-        if (!url) return '';
-        let id = '';
-        if (url.includes('id=')) {
-            id = url.split('id=')[1].split('&')[0];
-        } else if (url.includes('/file/d/')) {
-            id = url.split('/file/d/')[1].split('/')[0];
+        const id = url.match(/[-\w]{25,}/);
+        return id ? `https://drive.google.com/thumbnail?id=${id[0]}&sz=w1000` : '';
+    },
+
+    // 시트 데이터를 읽어서 드롭다운 메뉴를 자동으로 만듭니다
+    createFilterMenus() {
+        const categories = {
+            year: [...new Set(this.allArtworks.map(a => a.year))].sort().reverse(),
+            subject: [...new Set(this.allArtworks.map(a => a.series))].sort(),
+            genre: [...new Set(this.allArtworks.map(a => a.genre))].sort()
+        };
+
+        for (const [key, list] of Object.entries(categories)) {
+            const menu = document.getElementById(`filter-${key}`);
+            list.forEach(val => {
+                if(!val) return;
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="#/archive/${key}?val=${encodeURIComponent(val)}">${val}</a>`;
+                menu.appendChild(li);
+            });
         }
-        // 구글 드라이브 이미지를 웹에서 바로 보여주는 썸네일 주소
-        return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w1000` : '';
     },
 
     handleRouting() {
@@ -87,32 +66,44 @@ async fetchData() {
         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
 
         if (hash.startsWith('#/archive/')) {
-            const type = hash.split('/').pop();
-            this.renderArchive(type);
+            const urlObj = new URL(window.location.origin + window.location.pathname + window.location.hash.replace('#', ''));
+            const type = hash.split('/')[2].split('?')[0];
+            const filterVal = new URLSearchParams(window.location.hash.split('?')[1]).get('val');
+            
+            this.renderArchive(type, filterVal);
             document.getElementById('page-archive').classList.add('active');
-        } else if (hash === '#/') {
-            document.getElementById('page-home').classList.add('active');
         } else {
-            const pageId = `page-${hash.replace('#/', '')}`;
-            const target = document.getElementById(pageId);
-            if (target) target.classList.add('active');
+            document.getElementById('page-home').classList.add('active');
         }
     },
 
-    renderArchive(type) {
+    renderArchive(type, filterVal) {
         const container = document.getElementById('page-archive');
         container.innerHTML = '';
 
         const groupKey = type === 'year' ? 'year' : (type === 'subject' ? 'series' : 'genre');
-        const groups = {};
+        
+        // 필터링 로직
+        let filtered = (filterVal === 'all' || !filterVal) 
+            ? this.allArtworks 
+            : this.allArtworks.filter(art => String(art[groupKey]) === filterVal);
 
-        this.allArtworks.forEach(art => {
-            const val = art[groupKey] || '기타';
-            if (!groups[val]) groups[val] = [];
-            groups[val].push(art);
+        // 그룹화하여 보여주기
+        const groups = {};
+        filtered.forEach(art => {
+            const key = art[groupKey] || '기타';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(art);
         });
 
-        Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(key => {
+        const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+        
+        if(sortedKeys.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:100px;">해당 조건의 작품이 없습니다.</p>';
+            return;
+        }
+
+        sortedKeys.forEach(key => {
             const section = document.createElement('div');
             section.className = 'archive-section';
             section.innerHTML = `
@@ -131,10 +122,6 @@ async fetchData() {
             `;
             container.appendChild(section);
         });
-    },
-
-    bindEvents() {
-        window.addEventListener('hashchange', () => this.handleRouting());
     }
 };
 
