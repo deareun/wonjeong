@@ -8,25 +8,38 @@ const App = {
         this.bindEvents();
     },
 
-    async fetchData() {
-        const sheetId = CONFIG.SHEET_ID;
-        // 보안 에러를 피하기 위해 '웹에 게시(pub)'용 URL을 사용합니다.
-        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/pub?output=csv`;
+async fetchData() {
+        // '웹에 게시' 시 생성된 고유 키를 사용하여 CSV 경로를 만듭니다.
+        // 주소에서 2PACX-... 부분을 추출하여 사용합니다.
+        const pubKey = "2PACX-1vRSEzwAv82QQ3t90wx7jaaI4_ujdxXLR5AyUkvuQonCJ_Yn21I6V614Ao9PYDRai9Pt3OYXm9Pn-2J5";
+        const url = `https://docs.google.com/spreadsheets/d/e/${pubKey}/pub?output=csv`;
         
         try {
+            console.log("데이터 요청 중...");
             const response = await fetch(url);
-            if (!response.ok) throw new Error("데이터를 가져올 수 없습니다.");
+            if (!response.ok) throw new Error("네트워크 응답 에러");
+            
             const csvText = await response.text();
+            
+            // 데이터가 비어있거나 오류 페이지인지 확인
+            if (csvText.length < 100) {
+                throw new Error("데이터가 너무 적거나 형식이 올바르지 않습니다.");
+            }
+
             this.allArtworks = this.parseCSV(csvText);
-            console.log("데이터 로드 완료:", this.allArtworks);
+            console.log("로드된 작품 수:", this.allArtworks.length);
+            
+            // 데이터 로드 후 현재 페이지 렌더링
+            this.handleRouting(); 
+            
         } catch (error) {
-            console.error("로드 실패:", error);
-            // 에러 시 사용자에게 알림
+            console.error("데이터 로드 실패:", error);
             const container = document.getElementById('page-archive');
-            if(container) container.innerHTML = `<p style="padding:50px; text-align:center;">데이터를 불러오는 중 오류가 발생했습니다. 구글 시트에서 [파일 > 공유 > 웹에 게시]를 완료했는지 확인해주세요.</p>`;
+            if (container) {
+                container.innerHTML = `<p style="padding:50px; text-align:center;">데이터를 불러오는 데 실패했습니다: ${error.message}</p>`;
+            }
         }
     },
-
     parseCSV(csv) {
         // CSV 줄바꿈 및 쉼표 처리
         const lines = csv.split(/\r?\n/);
