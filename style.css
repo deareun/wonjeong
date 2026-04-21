@@ -1,0 +1,179 @@
+/* 기본 스타일 초기화 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #fff;
+}
+
+/* 상단 내비게이션 */
+header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    border-bottom: 1px solid #eee;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.logo a {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: #000;
+    letter-spacing: -1px;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #666;
+    font-size: 0.95rem;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: #000;
+}
+
+/* 메인 컨텐츠 영역 */
+main {
+    margin-top: 80px;
+    padding: 2rem 5%;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.page-content {
+    display: none; /* 기본적으로 숨김 */
+}
+
+.page-content.active {
+    display: block; /* 활성화된 페이지만 표시 */
+}
+
+/* 아카이브 섹션 공통 */
+.archive-section {
+    margin-bottom: 4rem;
+}
+
+.section-heading {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #000;
+}
+
+/* Masonry 그리드 스타일 (핵심!) */
+.artwork-grid {
+    column-count: 3; /* 기본 3열 */
+    column-gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .artwork-grid { column-count: 2; }
+}
+
+@media (max-width: 600px) {
+    .artwork-grid { column-count: 1; }
+}
+
+/* 작품 카드 */
+.artwork-card {
+    break-inside: avoid; /* 카드가 중간에 잘리지 않게 함 */
+    margin-bottom: 1.5rem;
+    background: #f9f9f9;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.artwork-card:hover {
+    transform: translateY(-5px);
+}
+
+.artwork-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.artwork-card .info {
+    padding: 1rem;
+}
+
+.artwork-card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.artwork-card p {
+    font-size: 0.85rem;
+    color: #777;
+}
+
+/* 태그 스타일 */
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: #f4f4f4;
+    border-radius: 8px;
+    justify-content: center;
+}
+
+.tag-item {
+    cursor: pointer;
+    color: #555;
+    transition: color 0.2s;
+}
+
+.tag-item:hover {
+    color: #000;
+    font-weight: bold;
+}
+
+.tag-chip {
+    display: inline-block;
+    background: #eee;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-right: 4px;
+    margin-top: 8px;
+}
+
+/* 홈/소개 컨테이너 */
+.hero, .about-container, .contact-container {
+    text-align: center;
+    padding: 5rem 0;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
