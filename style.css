@@ -180,3 +180,47 @@ main {
     .nav-links { gap: 1rem; }
     .hero h1 { font-size: 2rem; }
 }
+/* 드롭다운 전체 컨테이너 */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropbtn {
+    cursor: pointer;
+}
+
+/* 실제 드롭다운 박스 */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #111; /* 상단바보다 살짝 더 진한 검정 */
+    min-width: 140px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.5);
+    z-index: 1;
+    list-style: none;
+    padding: 10px 0;
+    top: 100%;
+    left: 0;
+    border: 1px solid #333;
+}
+
+/* 드롭다운 안의 메뉴 아이템 */
+.dropdown-content li a {
+    color: #999 !important;
+    padding: 8px 20px;
+    display: block;
+    font-size: 0.85rem;
+    transition: 0.3s;
+}
+
+.dropdown-content li a:hover {
+    background-color: #222;
+    color: #fff !important;
+}
+
+/* 마우스를 올리면 드롭다운 표시 */
+.dropdown:hover .dropdown-content {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
